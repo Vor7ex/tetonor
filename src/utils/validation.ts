@@ -6,19 +6,32 @@ import type { GridCell, Pair, PuzzleState } from '@/types/game';
 
 /**
  * Valida si el input del usuario en una celda es correcto.
+ * La celda debe tener ambos operandos y el operador elegido.
+ * Los operandos se normalizan a orden ascendente para la validación.
  */
 export function validateCell(cell: GridCell, pairs: Pair[]): boolean {
-  if (cell.userInput === null) {
+  // 1. Verificar que todo esté lleno
+  if (cell.userOperandA === null || 
+      cell.userOperandB === null || 
+      cell.userOperation === null) {
     return false;
   }
 
-  const pair = pairs[cell.pairIndex];
-  if (!pair) {
+  // 2. Normalizar orden (a ≤ b) - orden flexible
+  const [a, b] = [cell.userOperandA, cell.userOperandB].sort((x, y) => x - y);
+
+  // 3. Buscar si existe ese par en pairs
+  const matchingPair = pairs.find(p => p.a === a && p.b === b);
+  if (!matchingPair) {
     return false;
   }
 
-  const expectedValue = cell.operation === 'sum' ? pair.sum : pair.product;
-  return cell.userInput === expectedValue;
+  // 4. Verificar que la operación elegida produzca el resultado correcto
+  const expectedValue = cell.userOperation === 'sum' 
+    ? matchingPair.sum 
+    : matchingPair.product;
+  
+  return cell.value === expectedValue;
 }
 
 /**
@@ -28,7 +41,9 @@ export function getCellValidationState(
   cell: GridCell,
   pairs: Pair[]
 ): 'empty' | 'correct' | 'incorrect' {
-  if (cell.userInput === null) {
+  if (cell.userOperandA === null || 
+      cell.userOperandB === null || 
+      cell.userOperation === null) {
     return 'empty';
   }
   return validateCell(cell, pairs) ? 'correct' : 'incorrect';
@@ -81,10 +96,14 @@ export function validateStripValue(
 }
 
 /**
- * Verifica si todas las celdas del grid tienen un valor ingresado.
+ * Verifica si todas las celdas del grid tienen valores ingresados.
  */
 export function isGridComplete(grid: GridCell[]): boolean {
-  return grid.every(cell => cell.userInput !== null);
+  return grid.every(cell => 
+    cell.userOperandA !== null && 
+    cell.userOperandB !== null && 
+    cell.userOperation !== null
+  );
 }
 
 /**
@@ -100,12 +119,12 @@ export function isStripComplete(strip: (number | null)[]): boolean {
 export function isPuzzleSolved(state: PuzzleState): boolean {
   // 1. Verificar que todas las celdas del grid estén llenas y correctas
   const allCellsCorrect = state.grid.every(cell => {
-    if (cell.userInput === null) {
+    if (cell.userOperandA === null || 
+        cell.userOperandB === null || 
+        cell.userOperation === null) {
       return false;
     }
-    const pair = state.pairs[cell.pairIndex];
-    const expected = cell.operation === 'sum' ? pair.sum : pair.product;
-    return cell.userInput === expected;
+    return validateCell(cell, state.pairs);
   });
 
   if (!allCellsCorrect) {
@@ -127,7 +146,10 @@ export function findGridConflicts(grid: GridCell[], pairs: Pair[]): number[] {
   const conflicts: number[] = [];
 
   grid.forEach((cell, index) => {
-    if (cell.userInput !== null && !validateCell(cell, pairs)) {
+    if (cell.userOperandA !== null && 
+        cell.userOperandB !== null && 
+        cell.userOperation !== null && 
+        !validateCell(cell, pairs)) {
       conflicts.push(index);
     }
   });
@@ -158,7 +180,11 @@ export function findStripConflicts(
  */
 export function calculateProgress(state: PuzzleState): number {
   const totalCells = state.grid.length;
-  const filledCells = state.grid.filter(cell => cell.userInput !== null).length;
+  const filledCells = state.grid.filter(cell => 
+    cell.userOperandA !== null && 
+    cell.userOperandB !== null && 
+    cell.userOperation !== null
+  ).length;
 
   const totalStrip = state.stripSolution.length;
   const filledStrip = state.stripUserInput.filter(val => val !== null).length;
@@ -177,7 +203,7 @@ export function isValidCellValue(value: number): boolean {
 }
 
 /**
- * Verifica si un valor es válido para el strip.
+ * Verifica si un valor es válido para el strip (operandos).
  */
 export function isValidStripValue(value: number): boolean {
   return Number.isInteger(value) && value >= 1 && value <= 50;

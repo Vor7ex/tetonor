@@ -1,111 +1,98 @@
 # Tetonor - Progreso de Desarrollo
 
-**Última Actualización:** 19 de Enero, 2026 - 14:30  
+**Última Actualización:** 19 de Enero, 2026 - 20:45  
 **Estado General:** En Desarrollo (Phase 1: MVP Core)  
-**Commit:** `d868e59` - feat: implement puzzle core with types, generator, validation, and hook
+**Commit Próximo:** feat: refactor game core to support dual operand input system
 
 ---
 
 ## 📊 Resumen Ejecutivo
 
-Tetonor es un juego de puzzles matemáticos donde los jugadores deducen pares de números basándose en sus sumas y productos. El proyecto está en **Phase 1: MVP Core** con la lógica fundamental completada.
+Tetonor es un juego de puzzles matemáticos donde los jugadores deducen pares de números basándose en sus sumas y productos. El proyecto está en **Phase 1: MVP Core** con una refactorización importante completada.
 
-**Progreso General:** 27% ✓ (Core Logic 100%, UI 60%, Navigation 0%)
+**Progreso General:** 35% ✓ (Core Logic 100%, UI 80%, Navigation 0%)
 
 ---
 
 ## ✅ Features Completadas
 
-### Feature 1: Puzzle Core (Completado - 100%)
+### Feature 1: Puzzle Core v2.0 (Completado - 100%)
 
 **Fecha:** 19 Enero, 2026  
-**Commit:** d868e59  
-**Estado:** ✅ LANZADO
+**Estado:** ✅ REFACTORIZADO
 
-#### Componentes Implementados
+#### Cambios Importantes (v2.0)
 
-| Archivo | Líneas | Estado |
-|---------|--------|--------|
-| `src/types/game.ts` | 160+ | ✅ |
-| `src/utils/constants.ts` | 60+ | ✅ |
-| `src/utils/puzzleGenerator.ts` | 280+ | ✅ |
-| `src/utils/validation.ts` | 150+ | ✅ |
-| `src/hooks/usePuzzle.ts` | 350+ | ✅ |
-| `src/App.tsx` | 400+ | ✅ |
+**Sistema de Input Dual para Operandos:**
+- Cada celda ahora tiene DOS inputs separados para operandos (A y B)
+- Botón toggle para seleccionar operador (+/×)
+- Soporte para números de múltiples dígitos (1-50)
+- Sin operador predeterminado (el usuario debe elegir explícitamente)
+- Validación con orden flexible de operandos
 
-#### Funcionalidades Implementadas
+#### Componentes Actualizados
 
-##### Core Logic
-- ✅ Generador de puzzles con seed determinístico
-  - 8 pares de operandos
-  - Génesis de grid con 16 celdas (suma + producto de cada par)
-  - Number strip con 16 operandos ordenados
-  - Ocultamiento configurable por dificultad
+| Archivo | Cambios | Estado |
+|---------|---------|--------|
+| `src/types/game.ts` | GridCell refactorizado con userOperandA, userOperandB, userOperation | ✅ |
+| `src/utils/validation.ts` | validateCell actualizado para dual operands + orden flexible | ✅ |
+| `src/utils/puzzleGenerator.ts` | Inicialización de celdas con nueva estructura | ✅ |
+| `src/hooks/usePuzzle.ts` | 6 nuevas acciones: selectOperandA/B, enterOperandA/B, toggleOperation | ✅ |
+| `src/App.tsx` | UI completamente rediseñada con inputs nativos HTML | ✅ |
 
-- ✅ Validación completa
-  - Por celda individual (inmediata)
-  - Del order ascendente del strip
-  - Del puzzle completo
-  - Detección de conflictos
+#### Funcionalidades Implementadas v2.0
 
-- ✅ Sistema de estado robusto
-  - Historial ilimitado (undo/redo)
-  - Snapshots del puzzle state
-  - Prevención de cambios en paused/completed
+##### Modelo de Juego Actualizado
+- ✅ Resultado de operación VISIBLE en cada celda (fijo)
+- ✅ Usuario ingresa DOS operandos en inputs separados
+- ✅ Usuario elige operador mediante botón toggle (cicla: null → + → × → null)
+- ✅ Inputs HTML nativos tipo number con validación 1-50
+- ✅ Placeholder visual "?" cuando operador no está elegido
+- ✅ Validación con orden flexible (3,4 = 4,3)
 
-##### Gameplay
-- ✅ 3 niveles de dificultad
-  - Easy: 0% strip oculto
-  - Medium: 25% strip oculto
-  - Hard: 50% strip oculto
-  
-- ✅ Sistema de hints (3 por puzzle)
-  - Revela celda vacía o incorrecta
-  - Revela posición del strip oculta
-  - Previene usar hints después de completar
-  
-- ✅ Pause/Resume
-  - Pausa el juego
-  - Oscurece el grid
-  - Evita input durante pausa
+##### Input & UX
+- ✅ Inputs separados con focus visual claro
+- ✅ Botón toggle operador con estados visuales (+, ×, ?)
+- ✅ Soporte para números multi-dígito (eliminadas flechas spinner)
+- ✅ Focus automático al hacer click en input
+- ✅ Validación en tiempo real al completar ambos operandos + operador
+- ✅ Feedback visual: verde=correcto, rojo=incorrecto
+- ✅ Celdas reveladas por hints con estilo especial (azul)
 
-##### UI/UX
-- ✅ Grid interactivo
-  - Selección con click
-  - Navegación con flechas
-  - Validación visual (verde/rojo)
-  - Resaltado de selección
-  
-- ✅ Number strip
-  - Edición de posiciones ocultas
-  - Visualización de visibles
-  - Validación de orden
+##### Sistema de Validación
+- ✅ Validación completa solo cuando A, B y operador están llenos
+- ✅ Normalización de orden (a ≤ b) antes de validar
+- ✅ Búsqueda de par coincidente en pairs
+- ✅ Verificación que operación produce resultado correcto
 
-- ✅ Controles completos
-  - Botones: Undo, Redo, Hint, Pause, New Puzzle
-  - Teclado: 1-9 (ingresar), 0/Delete (limpiar)
-  - Atajos: Ctrl+Z (undo), Ctrl+Y (redo)
-  - Flechas: Navegación en grid
+##### Historial & Hints
+- ✅ Undo/redo funcional con nueva estructura
+- ✅ Hints revelan operandos + operador correcto
+- ✅ Prevención de edición en celdas reveladas
 
-- ✅ Tema claro/oscuro
-  - Toggle en header
-  - Persiste durante sesión
-  - Aplicado a todo el UI
-
-- ✅ Indicadores
-  - Progreso en %
-  - Hints restantes
-  - Estado de completación
-  - Panel de debug (colapsable)
+##### Controles
+- ✅ Ctrl+Z/Y para undo/redo
+- ✅ Delete/Backspace para limpiar celda completa
+- ✅ Navegación con flechas entre celdas
+- ✅ Tab para moverse entre inputs (nativo del navegador)
 
 #### Tests & Quality
 
 ```
 Build: ✅ Sin errores TypeScript
 Lint:  ✅ Sin errores ESLint  
-Size:  205KB (gzip: 64KB)
+Size:  208.87KB (gzip: 64.41KB)
 Mode:  ✅ Strict TypeScript
+Time:  222ms
 ```
+
+#### Breaking Changes
+
+⚠️ **Incompatibilidad con versión anterior:**
+- `GridCell.userInput` eliminado → `userOperandA` + `userOperandB`
+- `GridCell.operation` eliminado → `userOperation` (ahora editable por usuario)
+- Acciones `enterNumber()` eliminadas → `enterOperandA()` / `enterOperandB()`
+- Estado `selectedOperand` agregado ('A' | 'B' | null)
 
 ---
 
@@ -168,11 +155,11 @@ Ninguno en este momento. Listo para siguiente feature.
 
 ### Phase 1: MVP Core ⏳
 
-**Estado:** 60% Completo  
+**Estado:** 70% Completo  
 **ETA:** 22 Enero, 2026
 
 Componentes:
-- ✅ Puzzle core logic (completado)
+- ✅ Puzzle core logic v2.0 (completado)
 - 🔄 Timer (~2-3 horas)
 - 📋 Navigation & pages (~3-4 horas)
 - 📋 Storage persistence (~2-3 horas)
@@ -220,23 +207,23 @@ Storage:        Browser LocalStorage (próximo)
 ```
 src/
 ├── types/          # TypeScript interfaces
-│   └── game.ts     # Tipos del juego
+│   └── game.ts     # Tipos del juego (actualizado v2.0)
 ├── utils/          # Funciones utilitarias
 │   ├── constants.ts
-│   ├── puzzleGenerator.ts
-│   └── validation.ts
+│   ├── puzzleGenerator.ts (actualizado v2.0)
+│   └── validation.ts      (actualizado v2.0)
 ├── hooks/          # Custom React hooks
-│   └── usePuzzle.ts
+│   └── usePuzzle.ts       (actualizado v2.0)
 ├── lib/            # Utilidades (shadcn/ui)
 │   └── utils.ts
 ├── components/     # Componentes React (próximo)
 ├── pages/          # Páginas de router (próximo)
-├── App.tsx         # Componente principal
+├── App.tsx         # Componente principal (refactorizado v2.0)
 ├── App.css         # Estilos globales
 └── main.tsx        # Entrada
 ```
 
-### Arquitectura del Estado
+### Arquitectura del Estado v2.0
 
 ```
 usePuzzle Hook
@@ -246,10 +233,12 @@ usePuzzle Hook
 │   └── seededRandom() → [0, 1]
 ├── Validación
 │   ├── isPuzzleSolved() → boolean
-│   ├── validateCell() → boolean
+│   ├── validateCell() → boolean (actualizado: dual operands)
 │   └── validateStrip() → boolean
 └── Acciones
-    ├── enterNumber() → void
+    ├── selectOperandA/B() → void (NUEVO)
+    ├── enterOperandA/B() → void (NUEVO)
+    ├── toggleOperation() → void (NUEVO)
     ├── undo/redo() → void
     ├── useHint() → void
     └── togglePause() → void
@@ -258,9 +247,9 @@ usePuzzle Hook
 ### Performance
 
 ```
-Build:          213ms
-Bundle:         205KB
-Gzipped:        64KB
+Build:          222ms
+Bundle:         208.87KB
+Gzipped:        64.41KB
 Modules:        20
 TypeScript:     Strict
 ```
@@ -268,6 +257,33 @@ TypeScript:     Strict
 ---
 
 ## 📝 Changelog
+
+### [2.0.0] - 19 Enero 2026
+
+#### Changed (Breaking)
+- **Refactored input system**: Ahora cada celda tiene DOS inputs para operandos
+- **User-selectable operators**: El usuario elige + o × mediante botón toggle
+- **Multi-digit support**: Inputs aceptan números de 1-50 (múltiples dígitos)
+- **GridCell structure**: `userInput` → `userOperandA` + `userOperandB` + `userOperation`
+
+#### Added
+- `selectOperandA()` / `selectOperandB()` actions
+- `enterOperandA()` / `enterOperandB()` actions  
+- `toggleOperation()` action (cicla null → sum → product)
+- Visual placeholder "?" para operador no elegido
+- Inputs HTML nativos con validación de rango
+- Estado `selectedOperand` ('A' | 'B' | null)
+
+#### Improved
+- Validación con orden flexible de operandos
+- Feedback visual más claro (inputs con border highlighting)
+- Mejor UX en mobile (teclado numérico automático)
+- Accesibilidad mejorada con inputs nativos
+
+#### Fixed
+- Números multi-dígito ahora soportados
+- Claridad de cuál input está activo
+- Validación correcta de pares con cualquier orden
 
 ### [1.0.0] - 19 Enero 2026
 
@@ -288,9 +304,6 @@ TypeScript:     Strict
 #### Fixed
 - TypeScript strict mode compliance
 - ESLint warnings
-
-#### Known Issues
-- None
 
 ---
 
@@ -315,13 +328,51 @@ TypeScript:     Strict
 
 ## 📞 Notas para Desarrollador
 
-1. **Entrada de números:** Usar valores 1-9 en celdas y strip
-2. **Debug:** Expandir panel al pie de la pantalla para ver state
-3. **Testing:** Cada cambio en lógica requiere recompilar (npm run build)
-4. **Commits:** Seguir convención `feat:`, `fix:`, `docs:`, etc.
+### Modelo del Juego v2.0
+
+**¿Qué ve el usuario?**
+- Cada celda muestra un RESULTADO (suma o producto) que es FIJO y VISIBLE
+- Dos inputs vacíos para ingresar operandos (A y B)
+- Un botón para elegir el operador (+ o ×)
+
+**¿Qué debe hacer el usuario?**
+1. Identificar qué DOS números del strip producen el resultado mostrado
+2. Ingresar esos números en los inputs A y B
+3. Elegir el operador correcto (+ o ×) que produce ese resultado
+4. La combinación (operandos + operador) se valida automáticamente
+
+**Ejemplo:**
+```
+┌─────────────────┐
+│   RESULTADO: 12 │  ← Fijo, visible
+├─────────────────┤
+│  [3] [×] [4]    │  ← Usuario ingresa operandos y elige operador
+└─────────────────┘
+```
+
+### Controles
+
+- **Click en inputs**: Selecciona operando A o B
+- **Números 1-50**: Se pueden ingresar en inputs
+- **Click en botón operador**: Cicla entre null → + → × → null
+- **Delete/Backspace**: Limpia toda la celda
+- **Ctrl+Z/Y**: Undo/redo
+- **Flechas**: Navegar entre celdas
+
+### Testing
+
+1. Ejecutar dev server: `npm run dev`
+2. Abrir http://localhost:5174
+3. Verificar que inputs aceptan números multi-dígito
+4. Verificar que botón toggle funciona
+5. Verificar validación con orden flexible
+
+### Commits
+
+- Seguir convención `feat:`, `fix:`, `refactor:`, etc.
+- Este cambio será: `feat: refactor game core to support dual operand input system`
 
 ---
 
-**Estado:** MVP Core en progreso  
+**Estado:** MVP Core en progreso (v2.0 completado)  
 **Próxima revisión:** Al completar Feature 2 (Timer)
-

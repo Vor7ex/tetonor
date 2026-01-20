@@ -235,7 +235,7 @@ Tetonor is a mathematical puzzle game where players deduce pairs of numbers base
 │                                 │
 │  NUMBER STRIP:                  │
 │  ┌──┬──┬──┬──┬──┬──┬──┬──┐      │
-│  │ 2│ 3│ 5│ 7│ ?│11│13│17│     │
+│  │ 2│ 3│ 5│ 7│ ?│11│13│17│      │
 │  └──┴──┴──┴──┴──┴──┴──┴──┘      │
 │                                 │
 │  ┌──────────────────────────┐   │

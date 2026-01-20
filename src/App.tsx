@@ -31,27 +31,6 @@ function App() {
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (state.paused || state.completed) return;
 
-    // Números 1-9 para ingresar
-    if (/^[1-9]$/.test(e.key)) {
-      const value = parseInt(e.key, 10);
-      if (state.selectedCellIndex !== null) {
-        actions.enterNumber(value);
-      } else if (state.selectedStripIndex !== null) {
-        actions.enterStripNumber(value);
-      }
-      return;
-    }
-
-    // 0 o Delete/Backspace para limpiar
-    if (e.key === '0' || e.key === 'Delete' || e.key === 'Backspace') {
-      if (state.selectedCellIndex !== null) {
-        actions.clearCell();
-      } else if (state.selectedStripIndex !== null) {
-        actions.clearStripPosition();
-      }
-      return;
-    }
-
     // Ctrl+Z para undo
     if ((e.ctrlKey || e.metaKey) && e.key === 'z') {
       e.preventDefault();
@@ -63,6 +42,16 @@ function App() {
     if ((e.ctrlKey || e.metaKey) && e.key === 'y') {
       e.preventDefault();
       actions.redo();
+      return;
+    }
+
+    // Delete/Backspace para limpiar
+    if (e.key === 'Delete' || e.key === 'Backspace') {
+      if (state.selectedCellIndex !== null) {
+        actions.clearCell();
+      } else if (state.selectedStripIndex !== null) {
+        actions.clearStripPosition();
+      }
       return;
     }
 
@@ -189,48 +178,120 @@ function App() {
       </div>
 
       {/* Grid del puzzle */}
-      <div className="max-w-2xl mx-auto mb-8">
-        <div className="grid grid-cols-4 gap-1 bg-border p-1 rounded-lg">
+      <div className="max-w-4xl mx-auto mb-8">
+        <div className="grid grid-cols-4 gap-2 bg-border p-2 rounded-lg">
           {state.grid.map((cell, index) => {
             const isSelected = state.selectedCellIndex === index;
             const isCorrect = cell.isCorrect === true;
             const isIncorrect = cell.isCorrect === false;
+            const operandASelected = isSelected && state.selectedOperand === 'A';
+            const operandBSelected = isSelected && state.selectedOperand === 'B';
 
             return (
-              <button
+              <div
                 key={index}
-                onClick={() => actions.selectCell(index)}
-                disabled={state.paused}
                 className={`
-                  aspect-square p-2 rounded-md transition-all duration-150
-                  flex flex-col items-center justify-center
-                  text-lg md:text-xl font-mono
-                  ${isSelected 
-                    ? 'ring-2 ring-blue-500 bg-blue-100 dark:bg-blue-900' 
-                    : 'bg-card hover:bg-accent'
-                  }
+                  rounded-md transition-all duration-150
+                  flex flex-col
+                  ${isSelected ? 'ring-2 ring-blue-500' : ''}
                   ${isCorrect ? 'bg-green-100 dark:bg-green-900' : ''}
                   ${isIncorrect ? 'bg-red-100 dark:bg-red-900' : ''}
-                  ${cell.isRevealed ? 'text-blue-600 dark:text-blue-400' : ''}
+                  ${!isCorrect && !isIncorrect ? 'bg-card' : ''}
                 `}
               >
-                {/* Resultado (valor a adivinar) */}
-                <span className="text-xl md:text-2xl font-bold">
-                  {cell.value}
-                </span>
-                {/* Operandos */}
-                <span className="text-xs text-muted-foreground mt-1">
-                  {cell.userInput !== null ? (
-                    <span className={isCorrect ? 'text-green-600' : isIncorrect ? 'text-red-600' : ''}>
-                      = {cell.userInput}
-                    </span>
-                  ) : (
-                    <span className="opacity-50">
-                      {cell.operation === 'sum' ? '+' : '×'}
-                    </span>
-                  )}
-                </span>
-              </button>
+                {/* Parte superior: RESULTADO (fijo, visible) */}
+                <div
+                  className="p-3 flex items-center justify-center border-b border-border cursor-pointer hover:bg-accent/50"
+                  onClick={() => actions.selectCell(index)}
+                >
+                  <span className="text-2xl md:text-3xl font-bold">
+                    {cell.value}
+                  </span>
+                </div>
+
+                {/* Parte inferior: OPERANDOS + OPERADOR */}
+                <div className="p-2 flex items-center justify-center gap-1">
+                  {/* Input A */}
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={cell.userOperandA ?? ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val) && val >= 1 && val <= 50) {
+                        actions.enterOperandA(val);
+                      } else if (e.target.value === '') {
+                        // Permitir vaciar el campo
+                      }
+                    }}
+                    onFocus={() => actions.selectOperandA(index)}
+                    disabled={state.paused || cell.isRevealed}
+                    placeholder="?"
+                    className={`
+                      w-12 h-10 text-center text-lg font-mono rounded
+                      border-2 transition-all
+                      ${operandASelected ? 'border-blue-500 ring-2 ring-blue-300' : 'border-border'}
+                      ${cell.isRevealed ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'bg-background'}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      focus:outline-none
+                      [appearance:textfield]
+                      [&::-webkit-outer-spin-button]:appearance-none
+                      [&::-webkit-inner-spin-button]:appearance-none
+                    `}
+                  />
+
+                  {/* Botón Toggle de Operador */}
+                  <button
+                    onClick={() => {
+                      actions.selectCell(index);
+                      actions.toggleOperation();
+                    }}
+                    disabled={state.paused || cell.isRevealed}
+                    className={`
+                      w-10 h-10 rounded font-bold text-lg
+                      transition-all
+                      ${cell.userOperation === null ? 'bg-muted text-muted-foreground' : 'bg-primary text-primary-foreground'}
+                      hover:opacity-80
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                    `}
+                  >
+                    {cell.userOperation === null && '?'}
+                    {cell.userOperation === 'sum' && '+'}
+                    {cell.userOperation === 'product' && '×'}
+                  </button>
+
+                  {/* Input B */}
+                  <input
+                    type="number"
+                    min="1"
+                    max="50"
+                    value={cell.userOperandB ?? ''}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (!isNaN(val) && val >= 1 && val <= 50) {
+                        actions.enterOperandB(val);
+                      } else if (e.target.value === '') {
+                        // Permitir vaciar el campo
+                      }
+                    }}
+                    onFocus={() => actions.selectOperandB(index)}
+                    disabled={state.paused || cell.isRevealed}
+                    placeholder="?"
+                    className={`
+                      w-12 h-10 text-center text-lg font-mono rounded
+                      border-2 transition-all
+                      ${operandBSelected ? 'border-blue-500 ring-2 ring-blue-300' : 'border-border'}
+                      ${cell.isRevealed ? 'bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-400' : 'bg-background'}
+                      disabled:opacity-50 disabled:cursor-not-allowed
+                      focus:outline-none
+                      [appearance:textfield]
+                      [&::-webkit-outer-spin-button]:appearance-none
+                      [&::-webkit-inner-spin-button]:appearance-none
+                    `}
+                  />
+                </div>
+              </div>
             );
           })}
         </div>
@@ -275,7 +336,7 @@ function App() {
         </div>
       </div>
 
-      {/* Teclado numérico (para móvil) */}
+      {/* Teclado numérico (para móvil y strip) */}
       <div className="max-w-xs mx-auto mb-8">
         <div className="grid grid-cols-5 gap-2">
           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 0].map(num => (
@@ -286,12 +347,11 @@ function App() {
                   if (state.selectedCellIndex !== null) actions.clearCell();
                   else if (state.selectedStripIndex !== null) actions.clearStripPosition();
                 } else {
-                  if (state.selectedCellIndex !== null) actions.enterNumber(num);
-                  else if (state.selectedStripIndex !== null) actions.enterStripNumber(num);
+                  if (state.selectedStripIndex !== null) actions.enterStripNumber(num);
                 }
               }}
               disabled={state.paused || state.completed}
-              className="h-12 rounded-md bg-secondary text-secondary-foreground hover:bg-accent transition-colors font-mono text-xl"
+              className="h-12 rounded-md bg-secondary text-secondary-foreground hover:bg-accent transition-colors font-mono text-xl disabled:opacity-50"
             >
               {num === 0 ? 'C' : num}
             </button>

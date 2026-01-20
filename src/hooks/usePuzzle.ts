@@ -3,7 +3,7 @@
 // ============================================================
 
 import { useState, useCallback, useMemo } from 'react';
-import type { PuzzleState, PuzzleConfig, GridCell, HistoryEntry } from '@/types/game';
+import type { PuzzleState, PuzzleConfig, GridCell, HistoryEntry, OperationType } from '@/types/game';
 import { generatePuzzle } from '@/utils/puzzleGenerator';
 import { validateCell, isPuzzleSolved } from '@/utils/validation';
 
@@ -13,9 +13,13 @@ import { validateCell, isPuzzleSolved } from '@/utils/validation';
 
 export interface UsePuzzleActions {
   selectCell: (index: number | null) => void;
+  selectOperandA: (cellIndex: number) => void;
+  selectOperandB: (cellIndex: number) => void;
   selectStripPosition: (index: number | null) => void;
-  enterNumber: (value: number) => void;
+  enterOperandA: (value: number) => void;
+  enterOperandB: (value: number) => void;
   enterStripNumber: (value: number) => void;
+  toggleOperation: () => void;
   clearCell: () => void;
   clearStripPosition: () => void;
   undo: () => void;
@@ -62,6 +66,25 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
     setState(prev => ({
       ...prev,
       selectedCellIndex: index,
+      selectedOperand: null,
+      selectedStripIndex: null,
+    }));
+  }, []);
+
+  const selectOperandA = useCallback((cellIndex: number) => {
+    setState(prev => ({
+      ...prev,
+      selectedCellIndex: cellIndex,
+      selectedOperand: 'A' as const,
+      selectedStripIndex: null,
+    }));
+  }, []);
+
+  const selectOperandB = useCallback((cellIndex: number) => {
+    setState(prev => ({
+      ...prev,
+      selectedCellIndex: cellIndex,
+      selectedOperand: 'B' as const,
       selectedStripIndex: null,
     }));
   }, []);
@@ -71,12 +94,18 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
       ...prev,
       selectedStripIndex: index,
       selectedCellIndex: null,
+      selectedOperand: null,
     }));
   }, []);
 
-  const enterNumber = useCallback((value: number) => {
+  const enterOperandA = useCallback((value: number) => {
     setState(prev => {
       if (prev.selectedCellIndex === null || prev.paused || prev.completed) {
+        return prev;
+      }
+
+      // Validar rango
+      if (value < 1 || value > 50) {
         return prev;
       }
 
@@ -86,13 +115,102 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
         if (i === prev.selectedCellIndex) {
           const updatedCell: GridCell = {
             ...cell,
-            userInput: value,
+            userOperandA: value,
             isCorrect: null,
           };
           updatedCell.isCorrect = validateCell(updatedCell, prev.pairs);
           return updatedCell;
         }
         return cell;
+      });
+
+      const newState: PuzzleState = {
+        ...prev,
+        grid: newGrid,
+        history: [...prev.history.slice(0, prev.historyIndex + 1), historyEntry],
+        historyIndex: prev.historyIndex + 1,
+      };
+
+      if (isPuzzleSolved(newState)) {
+        newState.completed = true;
+      }
+
+      return newState;
+    });
+  }, [saveToHistory]);
+
+  const enterOperandB = useCallback((value: number) => {
+    setState(prev => {
+      if (prev.selectedCellIndex === null || prev.paused || prev.completed) {
+        return prev;
+      }
+
+      // Validar rango
+      if (value < 1 || value > 50) {
+        return prev;
+      }
+
+      const historyEntry = saveToHistory(prev);
+
+      const newGrid = prev.grid.map((cell, i) => {
+        if (i === prev.selectedCellIndex) {
+          const updatedCell: GridCell = {
+            ...cell,
+            userOperandB: value,
+            isCorrect: null,
+          };
+          updatedCell.isCorrect = validateCell(updatedCell, prev.pairs);
+          return updatedCell;
+        }
+        return cell;
+      });
+
+      const newState: PuzzleState = {
+        ...prev,
+        grid: newGrid,
+        history: [...prev.history.slice(0, prev.historyIndex + 1), historyEntry],
+        historyIndex: prev.historyIndex + 1,
+      };
+
+      if (isPuzzleSolved(newState)) {
+        newState.completed = true;
+      }
+
+      return newState;
+    });
+  }, [saveToHistory]);
+
+  const toggleOperation = useCallback(() => {
+    setState(prev => {
+      if (prev.selectedCellIndex === null || prev.paused || prev.completed) {
+        return prev;
+      }
+
+      const cell = prev.grid[prev.selectedCellIndex];
+      let newOperation: OperationType | null;
+
+      // Ciclar: null → sum → product → null
+      if (cell.userOperation === null) {
+        newOperation = 'sum';
+      } else if (cell.userOperation === 'sum') {
+        newOperation = 'product';
+      } else {
+        newOperation = null;
+      }
+
+      const historyEntry = saveToHistory(prev);
+
+      const newGrid = prev.grid.map((c, i) => {
+        if (i === prev.selectedCellIndex) {
+          const updatedCell: GridCell = {
+            ...c,
+            userOperation: newOperation,
+            isCorrect: null,
+          };
+          updatedCell.isCorrect = validateCell(updatedCell, prev.pairs);
+          return updatedCell;
+        }
+        return c;
       });
 
       const newState: PuzzleState = {
@@ -155,7 +273,13 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
 
       const newGrid = prev.grid.map((c, i) => {
         if (i === prev.selectedCellIndex) {
-          return { ...c, userInput: null, isCorrect: null };
+          return {
+            ...c,
+            userOperandA: null,
+            userOperandB: null,
+            userOperation: null,
+            isCorrect: null,
+          };
         }
         return c;
       });
@@ -236,11 +360,16 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
         return prev;
       }
 
+      // Buscar primera celda vacía o incorrecta
       const targetIndex = prev.grid.findIndex(cell =>
-        cell.userInput === null || cell.isCorrect === false
+        cell.userOperandA === null ||
+        cell.userOperandB === null ||
+        cell.userOperation === null ||
+        cell.isCorrect === false
       );
 
       if (targetIndex === -1) {
+        // Si no hay celdas, buscar en el strip
         const stripTargetIndex = prev.stripUserInput.findIndex((val, i) =>
           prev.strip[i] === null && val !== prev.stripSolution[i]
         );
@@ -269,16 +398,22 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
         return newState;
       }
 
+      // Revelar celda del grid
       const historyEntry = saveToHistory(prev);
       const cell = prev.grid[targetIndex];
       const pair = prev.pairs[cell.pairIndex];
-      const correctValue = cell.operation === 'sum' ? pair.sum : pair.product;
+      
+      // Determinar qué operación produce el valor de la celda
+      const isSum = pair.sum === cell.value;
+      const correctOperation: OperationType = isSum ? 'sum' : 'product';
 
       const newGrid = prev.grid.map((c, i) => {
         if (i === targetIndex) {
           return {
             ...c,
-            userInput: correctValue,
+            userOperandA: pair.a,
+            userOperandB: pair.b,
+            userOperation: correctOperation,
             isCorrect: true,
             isRevealed: true,
           };
@@ -321,7 +456,11 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
     const canRedo = state.historyIndex < state.history.length - 1 && !state.paused && !state.completed;
 
     const totalCells = state.grid.length;
-    const filledCells = state.grid.filter(cell => cell.userInput !== null).length;
+    const filledCells = state.grid.filter(cell => 
+      cell.userOperandA !== null && 
+      cell.userOperandB !== null && 
+      cell.userOperation !== null
+    ).length;
     const hiddenStripCount = state.strip.filter(v => v === null).length;
     const filledHiddenStrip = state.stripUserInput.filter((v, i) => state.strip[i] === null && v !== null).length;
 
@@ -334,9 +473,13 @@ export function usePuzzle(initialConfig: PuzzleConfig): UsePuzzleReturn {
 
   const actions: UsePuzzleActions = {
     selectCell,
+    selectOperandA,
+    selectOperandB,
     selectStripPosition,
-    enterNumber,
+    enterOperandA,
+    enterOperandB,
     enterStripNumber,
+    toggleOperation,
     clearCell,
     clearStripPosition,
     undo,

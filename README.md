@@ -33,7 +33,7 @@ Your goal is to identify the correct pairs and complete both the grid and the nu
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/tetonor.git
+git clone https://github.com/vor7ex/tetonor.git
 cd tetonor
 
 # Install dependencies

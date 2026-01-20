@@ -48,14 +48,16 @@ export interface Pair {
  * Representa una celda del grid principal
  */
 export interface GridCell {
-  /** Índice del par al que pertenece esta celda */
+  /** Índice del par al que pertenece esta celda (usado para hints) */
   pairIndex: number;
-  /** Tipo de operación que muestra esta celda */
-  operation: OperationType;
-  /** El valor resultado (sum o product del par) */
+  /** El valor resultado que se muestra (fijo, visible) */
   value: number;
-  /** Lo que el usuario ha ingresado (null si vacío) */
-  userInput: number | null;
+  /** Primer operando ingresado por el usuario */
+  userOperandA: number | null;
+  /** Segundo operando ingresado por el usuario */
+  userOperandB: number | null;
+  /** Operador elegido por el usuario (null = no elegido aún) */
+  userOperation: OperationType | null;
   /** Estado de validación: null=no validado, true=correcto, false=incorrecto */
   isCorrect: boolean | null;
   /** Si esta celda fue revelada por un hint */
@@ -81,6 +83,8 @@ export interface PuzzleState {
   // ---- Estado de UI ----
   /** Índice de la celda seleccionada (null si ninguna) */
   selectedCellIndex: number | null;
+  /** Cuál operando está seleccionado ('A', 'B', o null) */
+  selectedOperand: 'A' | 'B' | null;
   /** Índice del strip seleccionado para editar (null si ninguno) */
   selectedStripIndex: number | null;
   /** Si el juego está pausado */

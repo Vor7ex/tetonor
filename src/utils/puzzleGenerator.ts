@@ -95,6 +95,7 @@ export function generatePairs(seed: number, count: number): Pair[] {
  * Genera el grid de celdas a partir de los pares.
  * Cada par produce 2 celdas: una para suma y una para producto.
  * Las celdas se mezclan aleatoriamente.
+ * El usuario debe adivinar los operandos y elegir la operación correcta.
  */
 function generateGrid(pairs: Pair[], seed: number): GridCell[] {
   const cells: GridCell[] = [];
@@ -103,17 +104,19 @@ function generateGrid(pairs: Pair[], seed: number): GridCell[] {
   pairs.forEach((pair, pairIndex) => {
     cells.push({
       pairIndex,
-      operation: 'sum',
       value: pair.sum,
-      userInput: null,
+      userOperandA: null,
+      userOperandB: null,
+      userOperation: null,
       isCorrect: null,
       isRevealed: false,
     });
     cells.push({
       pairIndex,
-      operation: 'product',
       value: pair.product,
-      userInput: null,
+      userOperandA: null,
+      userOperandB: null,
+      userOperation: null,
       isCorrect: null,
       isRevealed: false,
     });
@@ -198,6 +201,7 @@ export function generatePuzzle(config: PuzzleConfig): PuzzleState {
 
     // Estado de UI
     selectedCellIndex: null,
+    selectedOperand: null,
     selectedStripIndex: null,
     paused: false,
     completed: false,
